@@ -146,6 +146,12 @@ Once connected, you'll see the TickTick MCP server tools available in Claude, in
 | `create_project` | Create a new project | `name`, `color` (optional), `view_mode` (optional) |
 | `delete_project` | Delete a project | `project_id` |
 
+### Special Project IDs
+
+**Inbox**: You can use `"inbox"` as a project ID to access your TickTick inbox tasks. For example:
+- `get_project_tasks("inbox")` - Get all tasks in your inbox
+- `create_task("My Task", "inbox")` - Create a task in your inbox
+
 ## Example Prompts for Claude
 
 Here are some example prompts to use with Claude after connecting the TickTick MCP server:
