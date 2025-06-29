@@ -164,7 +164,7 @@ async def get_project_tasks(project_id: str) -> str:
     Get all tasks in a specific project.
     
     Args:
-        project_id: ID of the project
+        project_id: ID of the project. Use "inbox" to access your TickTick inbox tasks.
     """
     if not ticktick:
         if not initialize_client():
@@ -194,7 +194,7 @@ async def get_task(project_id: str, task_id: str) -> str:
     Get details about a specific task.
     
     Args:
-        project_id: ID of the project
+        project_id: ID of the project. Use "inbox" to access your TickTick inbox tasks.
         task_id: ID of the task
     """
     if not ticktick:
@@ -225,7 +225,7 @@ async def create_task(
     
     Args:
         title: Task title
-        project_id: ID of the project to add the task to
+        project_id: ID of the project to add the task to. Use "inbox" to create tasks in your TickTick inbox.
         content: Task description/content (optional)
         start_date: Start date in ISO format YYYY-MM-DDThh:mm:ss+0000 (optional)
         due_date: Due date in ISO format YYYY-MM-DDThh:mm:ss+0000 (optional)
@@ -281,7 +281,7 @@ async def update_task(
     
     Args:
         task_id: ID of the task to update
-        project_id: ID of the project the task belongs to
+        project_id: ID of the project the task belongs to. Use "inbox" for inbox tasks.
         title: New task title (optional)
         content: New task description/content (optional)
         start_date: New start date in ISO format YYYY-MM-DDThh:mm:ss+0000 (optional)
@@ -330,7 +330,7 @@ async def complete_task(project_id: str, task_id: str) -> str:
     Mark a task as complete.
     
     Args:
-        project_id: ID of the project
+        project_id: ID of the project. Use "inbox" for inbox tasks.
         task_id: ID of the task
     """
     if not ticktick:
@@ -353,7 +353,7 @@ async def delete_task(project_id: str, task_id: str) -> str:
     Delete a task.
     
     Args:
-        project_id: ID of the project
+        project_id: ID of the project. Use "inbox" for inbox tasks.
         task_id: ID of the task
     """
     if not ticktick:
