@@ -131,6 +131,37 @@ The server handles token refresh automatically, so you won't need to reauthentic
 
 Once connected, you'll see the TickTick MCP server tools available in Claude, indicated by the 🔨 (tools) icon.
 
+## Deploying to Smithery
+
+This server can be deployed to Smithery using their Python Streamable HTTP MCP integration. Follow these steps:
+
+1. Install dependencies including Smithery:
+   ```bash
+   uv pip install -e .
+   ```
+
+2. Ensure `pyproject.toml` includes the Smithery server pointer:
+   ```toml
+   [tool.smithery]
+   server = "ticktick_mcp.src.server:create_server"
+   ```
+
+3. Local dev and playground testing:
+   ```bash
+   # Run locally
+   uv run dev
+
+   # Or open in the Smithery Playground via ngrok
+   uv run playground
+   ```
+
+4. Deploy:
+   - Push to a GitHub repo
+   - In Smithery, create a deployment and select this repo
+   - Smithery will discover the server via `[tool.smithery]` configuration and the `@smithery.server()` decorator in `ticktick_mcp/src/server.py`.
+
+For more details, see Smithery docs: [Quickstart: Python](https://smithery.ai/docs/getting_started/quickstart_build_python).
+
 ## Available MCP Tools
 
 | Tool | Description | Parameters |

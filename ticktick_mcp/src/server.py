@@ -7,6 +7,17 @@ from typing import Dict, List, Any, Optional
 
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
+try:
+    from smithery.decorators import smithery
+except Exception:
+    # Fallback no-op decorator to preserve local usage when smithery isn't installed
+    class _NoopSmithery:  # noqa: N801 - third-party API compatibility
+        def server(self, *args, **kwargs):
+            def _decorator(func):
+                return func
+            return _decorator
+
+    smithery = _NoopSmithery()
 
 from .ticktick_client import TickTickClient
 
@@ -993,3 +1004,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+# Smithery integration: expose a factory for deployment
+@smithery.server()
+def create_server():
+    """Create and return the FastMCP server for Smithery deployments."""
+    return mcp

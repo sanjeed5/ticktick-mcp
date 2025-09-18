@@ -1,0 +1,4 @@
+[tool.smithery]
+server = "ticktick_mcp.src.server:create_server"
+
+
