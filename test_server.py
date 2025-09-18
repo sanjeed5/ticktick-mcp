@@ -62,6 +62,45 @@ def test_ticktick_connection():
         print(f"✅ Successfully fetched {len(projects)} projects from TickTick.")
         for i, project in enumerate(projects, 1):
             print(f"  - {project.get('name', 'Unnamed project')} (ID: {project.get('id', 'No ID')})")
+        
+        # Test subtask creation if we have projects
+        if projects:
+            print("\n🧪 Testing subtask creation functionality...")
+            test_project_id = projects[0].get('id')
+            
+            # Create a parent task
+            parent_task = client.create_task(
+                title="Test Parent Task",
+                project_id=test_project_id,
+                content="This is a test parent task"
+            )
+            
+            if 'error' not in parent_task and 'id' in parent_task:
+                parent_task_id = parent_task['id']
+                print(f"✅ Created parent task: {parent_task.get('title')} (ID: {parent_task_id})")
+                
+                # Create a subtask
+                subtask = client.create_subtask(
+                    subtask_title="Test Subtask",
+                    parent_task_id=parent_task_id,
+                    project_id=test_project_id,
+                    content="This is a test subtask"
+                )
+                
+                if 'error' not in subtask:
+                    print(f"✅ Created subtask: {subtask.get('title', 'Test Subtask')}")
+                    
+                    # Clean up test tasks
+                    client.delete_task(test_project_id, parent_task_id)
+                    if 'id' in subtask:
+                        client.delete_task(test_project_id, subtask['id'])
+                    print("🧹 Cleaned up test tasks")
+                else:
+                    print(f"❌ Failed to create subtask: {subtask.get('error', 'Unknown error')}")
+                    # Clean up parent task
+                    client.delete_task(test_project_id, parent_task_id)
+            else:
+                print(f"❌ Failed to create parent task: {parent_task.get('error', 'Unknown error')}")
             
         print("\nThe TickTick MCP server is configured correctly!")
         print("You can now run the server using 'uv run -m ticktick_mcp.cli run'")

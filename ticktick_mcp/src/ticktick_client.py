@@ -278,3 +278,31 @@ class TickTickClient:
     def delete_task(self, project_id: str, task_id: str) -> Dict:
         """Deletes a task."""
         return self._make_request("DELETE", f"/project/{project_id}/task/{task_id}")
+    
+    def create_subtask(self, subtask_title: str, parent_task_id: str, project_id: str, 
+                      content: str = None, priority: int = 0) -> Dict:
+        """
+        Creates a subtask for a parent task within the same project.
+        
+        Args:
+            subtask_title: Title of the subtask
+            parent_task_id: ID of the parent task
+            project_id: ID of the project (must be same for both parent and subtask)
+            content: Optional content/description for the subtask
+            priority: Priority level (0-3, where 3 is highest)
+        
+        Returns:
+            API response as a dictionary containing the created subtask
+        """
+        data = {
+            "title": subtask_title,
+            "projectId": project_id,
+            "parentId": parent_task_id
+        }
+        
+        if content:
+            data["content"] = content
+        if priority is not None:
+            data["priority"] = priority
+            
+        return self._make_request("POST", "/task", data)
