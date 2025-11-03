@@ -114,7 +114,15 @@ def format_project(project: Dict) -> str:
 
 @mcp.tool()
 async def get_projects() -> str:
-    """Get all projects from TickTick."""
+    """
+    Get all projects from TickTick.
+    
+    Returns:
+        Formatted list of all projects with their details (ID, name, color, view mode, etc.).
+    
+    Example:
+        Use this to see all available projects before creating tasks or filtering by project.
+    """
     if not ticktick:
         if not initialize_client():
             return "Failed to initialize TickTick client. Please check your API credentials."
@@ -142,7 +150,13 @@ async def get_project(project_id: str) -> str:
     Get details about a specific project.
     
     Args:
-        project_id: ID of the project
+        project_id: ID of the project. Use "inbox" for the inbox project.
+    
+    Returns:
+        Formatted project details including name, ID, color, view mode, and status.
+    
+    Example:
+        get_project("6226ff9877acee87727f6bca") - Get details for a specific project
     """
     if not ticktick:
         if not initialize_client():
@@ -165,6 +179,13 @@ async def get_project_tasks(project_id: str) -> str:
     
     Args:
         project_id: ID of the project. Use "inbox" to access your TickTick inbox tasks.
+    
+    Returns:
+        Formatted list of all tasks in the project with their details (title, priority, due dates, status, etc.).
+    
+    Example:
+        get_project_tasks("inbox") - Get all tasks in your inbox
+        get_project_tasks("6226ff9877acee87727f6bca") - Get all tasks in a specific project
     """
     if not ticktick:
         if not initialize_client():
@@ -194,8 +215,14 @@ async def get_task(project_id: str, task_id: str) -> str:
     Get details about a specific task.
     
     Args:
-        project_id: ID of the project. Use "inbox" to access your TickTick inbox tasks.
+        project_id: ID of the project. Use "inbox" for inbox tasks.
         task_id: ID of the task
+    
+    Returns:
+        Formatted task details including title, content, priority, dates, status, and subtasks.
+    
+    Example:
+        get_task("inbox", "63b7bebb91c0a5474805fcd4") - Get details for a specific task
     """
     if not ticktick:
         if not initialize_client():
@@ -224,12 +251,25 @@ async def create_task(
     Create a new task in TickTick.
     
     Args:
-        title: Task title
-        project_id: ID of the project to add the task to. Use "inbox" to create tasks in your TickTick inbox.
+        title: Task title (required)
+            Example: "Review Q4 report"
+        project_id: ID of the project to add the task to (required)
+            Use "inbox" to create tasks in your TickTick inbox.
+            Example: "inbox" or "6226ff9877acee87727f6bca"
         content: Task description/content (optional)
+            Example: "Review all sections and provide feedback"
         start_date: Start date in ISO format YYYY-MM-DDThh:mm:ss+0000 (optional)
+            Example: "2025-11-05T09:00:00+0000"
         due_date: Due date in ISO format YYYY-MM-DDThh:mm:ss+0000 (optional)
-        priority: Priority level (0: None, 1: Low, 3: Medium, 5: High) (optional)
+            Example: "2025-11-05T18:00:00+0000"
+        priority: Priority level (optional, default 0)
+            0 = None, 1 = Low, 3 = Medium, 5 = High
+    
+    Returns:
+        Formatted task details including ID for future updates.
+    
+    Example:
+        create_task("Buy groceries", "inbox", priority=3, due_date="2025-11-05T18:00:00+0000")
     """
     if not ticktick:
         if not initialize_client():
@@ -280,13 +320,23 @@ async def update_task(
     Update an existing task in TickTick.
     
     Args:
-        task_id: ID of the task to update
-        project_id: ID of the project the task belongs to. Use "inbox" for inbox tasks.
+        task_id: ID of the task to update (required)
+        project_id: ID of the project the task belongs to (required). Use "inbox" for inbox tasks.
         title: New task title (optional)
+            Example: "Review Q4 report - Updated"
         content: New task description/content (optional)
         start_date: New start date in ISO format YYYY-MM-DDThh:mm:ss+0000 (optional)
+            Example: "2025-11-05T09:00:00+0000"
         due_date: New due date in ISO format YYYY-MM-DDThh:mm:ss+0000 (optional)
-        priority: New priority level (0: None, 1: Low, 3: Medium, 5: High) (optional)
+            Example: "2025-11-06T18:00:00+0000"
+        priority: New priority level (optional)
+            0 = None, 1 = Low, 3 = Medium, 5 = High
+    
+    Returns:
+        Formatted updated task details.
+    
+    Example:
+        update_task("63b7bebb91c0a5474805fcd4", "inbox", priority=5) - Update task priority to high
     """
     if not ticktick:
         if not initialize_client():
@@ -330,8 +380,14 @@ async def complete_task(project_id: str, task_id: str) -> str:
     Mark a task as complete.
     
     Args:
-        project_id: ID of the project. Use "inbox" for inbox tasks.
-        task_id: ID of the task
+        project_id: ID of the project (required). Use "inbox" for inbox tasks.
+        task_id: ID of the task to complete (required)
+    
+    Returns:
+        Confirmation message indicating the task was marked as complete.
+    
+    Example:
+        complete_task("inbox", "63b7bebb91c0a5474805fcd4") - Mark a task as done
     """
     if not ticktick:
         if not initialize_client():
@@ -350,11 +406,20 @@ async def complete_task(project_id: str, task_id: str) -> str:
 @mcp.tool()
 async def delete_task(project_id: str, task_id: str) -> str:
     """
-    Delete a task.
+    Delete a task permanently.
     
     Args:
-        project_id: ID of the project. Use "inbox" for inbox tasks.
-        task_id: ID of the task
+        project_id: ID of the project (required). Use "inbox" for inbox tasks.
+        task_id: ID of the task to delete (required)
+    
+    Returns:
+        Confirmation message indicating the task was deleted.
+    
+    Warning:
+        This action cannot be undone. Use complete_task if you want to mark a task as done instead.
+    
+    Example:
+        delete_task("inbox", "63b7bebb91c0a5474805fcd4") - Delete a task permanently
     """
     if not ticktick:
         if not initialize_client():
@@ -380,9 +445,18 @@ async def create_project(
     Create a new project in TickTick.
     
     Args:
-        name: Project name
-        color: Color code (hex format) (optional)
-        view_mode: View mode - one of list, kanban, or timeline (optional)
+        name: Project name (required)
+            Example: "Vacation Planning"
+        color: Color code in hex format (optional, default "#F18181")
+            Example: "#F18181" (red), "#5AC8FA" (blue), "#34C759" (green)
+        view_mode: View mode (optional, default "list")
+            Options: "list", "kanban", "timeline"
+    
+    Returns:
+        Formatted project details including the new project ID.
+    
+    Example:
+        create_project("Work Tasks", color="#5AC8FA", view_mode="kanban")
     """
     if not ticktick:
         if not initialize_client():
@@ -410,10 +484,19 @@ async def create_project(
 @mcp.tool()
 async def delete_project(project_id: str) -> str:
     """
-    Delete a project.
+    Delete a project permanently.
     
     Args:
-        project_id: ID of the project
+        project_id: ID of the project to delete (required)
+    
+    Returns:
+        Confirmation message indicating the project was deleted.
+    
+    Warning:
+        This action cannot be undone. All tasks in the project will also be deleted.
+    
+    Example:
+        delete_project("6226ff9877acee87727f6bca") - Delete a project
     """
     if not ticktick:
         if not initialize_client():
@@ -436,18 +519,70 @@ async def delete_project(project_id: str) -> str:
 
 PRIORITY_MAP = {0: "None", 1: "Low", 3: "Medium", 5: "High"}
 
+def _parse_ticktick_date(date_str: str) -> Optional[datetime]:
+    """
+    Parse a TickTick date string to a datetime object.
+    
+    TickTick API returns dates in format: "2019-11-14T03:00:00+0000"
+    (without microseconds, timezone as +0000 instead of +00:00)
+    
+    Args:
+        date_str: Date string from TickTick API
+        
+    Returns:
+        datetime object with timezone, or None if parsing fails
+    """
+    if not date_str:
+        return None
+    
+    try:
+        # Try parsing with microseconds first (in case API changes)
+        try:
+            return datetime.strptime(date_str, "%Y-%m-%dT%H:%M:%S.%f%z")
+        except ValueError:
+            pass
+        
+        # Normalize timezone format: +0000 -> +00:00 for Python's strptime
+        # Python's %z expects +00:00 format, not +0000
+        normalized_date = date_str
+        if len(date_str) > 5 and date_str[-5] in ['+', '-']:
+            # Format: YYYY-MM-DDTHH:MM:SS+0000 -> YYYY-MM-DDTHH:MM:SS+00:00
+            timezone_part = date_str[-5:]
+            if len(timezone_part) == 5 and timezone_part[-4:].isdigit():
+                sign = timezone_part[0]
+                hours = timezone_part[1:3]
+                minutes = timezone_part[3:5]
+                normalized_date = date_str[:-5] + f"{sign}{hours}:{minutes}"
+        
+        # Try parsing without microseconds
+        try:
+            return datetime.strptime(normalized_date, "%Y-%m-%dT%H:%M:%S%z")
+        except ValueError:
+            # Fallback: try with fromisoformat which handles both formats
+            try:
+                # Convert +0000 to +00:00 for fromisoformat
+                if normalized_date.endswith(('+0000', '-0000')):
+                    sign = normalized_date[-5]
+                    normalized_date = normalized_date[:-5] + f"{sign}00:00"
+                return datetime.fromisoformat(normalized_date.replace('Z', '+00:00'))
+            except (ValueError, AttributeError):
+                return None
+    except (ValueError, TypeError, AttributeError):
+        return None
+
 def _is_task_due_today(task: Dict[str, Any]) -> bool:
     """Check if a task is due today."""
     due_date = task.get('dueDate')
     if not due_date:
         return False
     
-    try:
-        task_due_date = datetime.strptime(due_date, "%Y-%m-%dT%H:%M:%S.%f%z").date()
-        today_date = datetime.now(timezone.utc).date()
-        return task_due_date == today_date
-    except (ValueError, TypeError):
+    task_dt = _parse_ticktick_date(due_date)
+    if not task_dt:
         return False
+    
+    task_due_date = task_dt.date()
+    today_date = datetime.now(timezone.utc).date()
+    return task_due_date == today_date
 
 def _is_task_overdue(task: Dict[str, Any]) -> bool:
     """Check if a task is overdue."""
@@ -455,11 +590,11 @@ def _is_task_overdue(task: Dict[str, Any]) -> bool:
     if not due_date:
         return False
     
-    try:
-        task_due = datetime.strptime(due_date, "%Y-%m-%dT%H:%M:%S.%f%z")
-        return task_due < datetime.now(timezone.utc)
-    except (ValueError, TypeError):
+    task_dt = _parse_ticktick_date(due_date)
+    if not task_dt:
         return False
+    
+    return task_dt < datetime.now(timezone.utc)
 
 def _is_task_due_in_days(task: Dict[str, Any], days: int) -> bool:
     """Check if a task is due in exactly X days."""
@@ -467,12 +602,13 @@ def _is_task_due_in_days(task: Dict[str, Any], days: int) -> bool:
     if not due_date:
         return False
     
-    try:
-        task_due_date = datetime.strptime(due_date, "%Y-%m-%dT%H:%M:%S.%f%z").date()
-        target_date = (datetime.now(timezone.utc) + timedelta(days=days)).date()
-        return task_due_date == target_date
-    except (ValueError, TypeError):
+    task_dt = _parse_ticktick_date(due_date)
+    if not task_dt:
         return False
+    
+    task_due_date = task_dt.date()
+    target_date = (datetime.now(timezone.utc) + timedelta(days=days)).date()
+    return task_due_date == target_date
 
 def _task_matches_search(task: Dict[str, Any], search_term: str) -> bool:
     """Check if a task matches the search term (case-insensitive)."""
@@ -578,365 +714,194 @@ def _get_project_tasks_by_filter(projects: List[Dict], filter_func, filter_name:
     
     return result
 
-# New MCP Tools for Tasks
+# Task Filtering Tool
 
 @mcp.tool()
-async def get_all_tasks() -> str:
-    """Get all tasks from TickTick. Ignores closed projects."""
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
-    
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def all_tasks_filter(task: Dict[str, Any]) -> bool:
-            return True  # Include all tasks
-        
-        return _get_project_tasks_by_filter(projects, all_tasks_filter, "included")
-        
-    except Exception as e:
-        logger.error(f"Error in get_all_tasks: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def get_tasks_by_priority(priority_id: int) -> str:
+async def filter_tasks(
+    date_filter: str = "all",
+    priority: int = None,
+    search_term: str = None,
+    project_id: str = None
+) -> str:
     """
-    Get all tasks from TickTick by priority. Ignores closed projects.
-
-    Args:
-        priority_id: Priority of tasks to retrieve {0: "None", 1: "Low", 3: "Medium", 5: "High"}
-    """
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
-    
-    if priority_id not in PRIORITY_MAP:
-        return f"Invalid priority_id. Valid values: {list(PRIORITY_MAP.keys())}"
-    
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def priority_filter(task: Dict[str, Any]) -> bool:
-            return task.get('priority', 0) == priority_id
-        
-        priority_name = f"{PRIORITY_MAP[priority_id]} ({priority_id})"
-        return _get_project_tasks_by_filter(projects, priority_filter, f"priority '{priority_name}'")
-        
-    except Exception as e:
-        logger.error(f"Error in get_tasks_by_priority: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def get_tasks_due_today() -> str:
-    """Get all tasks from TickTick that are due today. Ignores closed projects."""
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
-    
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def today_filter(task: Dict[str, Any]) -> bool:
-            return _is_task_due_today(task)
-        
-        return _get_project_tasks_by_filter(projects, today_filter, "due today")
-        
-    except Exception as e:
-        logger.error(f"Error in get_tasks_due_today: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def get_overdue_tasks() -> str:
-    """Get all overdue tasks from TickTick. Ignores closed projects."""
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
-    
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def overdue_filter(task: Dict[str, Any]) -> bool:
-            return _is_task_overdue(task)
-        
-        return _get_project_tasks_by_filter(projects, overdue_filter, "overdue")
-        
-    except Exception as e:
-        logger.error(f"Error in get_overdue_tasks: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def get_tasks_due_tomorrow() -> str:
-    """Get all tasks from TickTick that are due today. Ignores closed projects."""
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
-    
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def today_filter(task: Dict[str, Any]) -> bool:
-            return _is_task_due_in_days(task, 1)
-        
-        return _get_project_tasks_by_filter(projects, today_filter, "due today")
-        
-    except Exception as e:
-        logger.error(f"Error in get_tasks_due_today: {e}")
-        return f"Error retrieving projects: {str(e)}"
-    
-@mcp.tool()
-async def get_tasks_due_in_days(days: int) -> str:
-    """
-    Get all tasks from TickTick that are due in exactly X days. Ignores closed projects.
+    Filter tasks across all projects with flexible criteria. Combine multiple filters to find exactly what you need.
     
     Args:
-        days: Number of days from today (0 = today, 1 = tomorrow, etc.)
+        date_filter: Filter by date range. Options:
+            - "all" (default): All tasks regardless of date
+            - "today": Tasks due today
+            - "tomorrow": Tasks due tomorrow
+            - "overdue": Tasks that are past their due date
+            - "this_week": Tasks due within the next 7 days
+            - "next_7_days": Same as "this_week"
+        priority: Filter by priority level. Options:
+            - None (default): Any priority
+            - 0: None priority
+            - 1: Low priority
+            - 3: Medium priority
+            - 5: High priority
+        search_term: Search for text in task title, content, or subtask titles (case-insensitive).
+            Example: "client meeting" will find tasks containing "client meeting"
+        project_id: Filter to a specific project. Use "inbox" for inbox tasks, or a project ID.
+            If None, searches across all projects.
+    
+    Returns:
+        Formatted list of matching tasks grouped by project.
+    
+    Examples:
+        filter_tasks(date_filter="overdue") - All overdue tasks
+        filter_tasks(priority=5) - All high priority tasks
+        filter_tasks(date_filter="today", priority=5) - High priority tasks due today
+        filter_tasks(search_term="client meeting") - Search for tasks about client meetings
+        filter_tasks(project_id="inbox", date_filter="this_week") - Inbox tasks due this week
+        filter_tasks(priority=3, search_term="review") - Medium priority tasks containing "review"
     """
     if not ticktick:
         if not initialize_client():
             return "Failed to initialize TickTick client. Please check your API credentials."
     
-    if days < 0:
-        return "Days must be a non-negative integer."
+    # Validate date_filter
+    valid_date_filters = ["all", "today", "tomorrow", "overdue", "this_week", "next_7_days"]
+    if date_filter not in valid_date_filters:
+        return f"Invalid date_filter. Valid values: {', '.join(valid_date_filters)}"
     
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def days_filter(task: Dict[str, Any]) -> bool:
-            return _is_task_due_in_days(task, days)
-        
-        day_description = "today" if days == 0 else f"in {days} day{'s' if days != 1 else ''}"
-        return _get_project_tasks_by_filter(projects, days_filter, f"due {day_description}")
-        
-    except Exception as e:
-        logger.error(f"Error in get_tasks_due_in_days: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def get_tasks_due_this_week() -> str:
-    """Get all tasks from TickTick that are due within the next 7 days. Ignores closed projects."""
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
+    # Validate priority if provided
+    if priority is not None and priority not in PRIORITY_MAP:
+        return f"Invalid priority. Valid values: {list(PRIORITY_MAP.keys())}"
     
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def week_filter(task: Dict[str, Any]) -> bool:
-            due_date = task.get('dueDate')
-            if not due_date:
-                return False
-            
-            try:
-                task_due_date = datetime.strptime(due_date, "%Y-%m-%dT%H:%M:%S.%f%z").date()
-                today = datetime.now(timezone.utc).date()
-                week_from_today = today + timedelta(days=7)
-                return today <= task_due_date <= week_from_today
-            except (ValueError, TypeError):
-                return False
-        
-        return _get_project_tasks_by_filter(projects, week_filter, "due this week")
-        
-    except Exception as e:
-        logger.error(f"Error in get_tasks_due_this_week: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def search_tasks(search_term: str) -> str:
-    """
-    Search for tasks in TickTick by title, content, or subtask titles. Ignores closed projects.
-    
-    Args:
-        search_term: Text to search for (case-insensitive)
-    """
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
-    
-    if not search_term.strip():
+    # Validate search_term if provided
+    if search_term is not None and not search_term.strip():
         return "Search term cannot be empty."
     
     try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
+        # Get projects to filter
+        if project_id:
+            # Single project filter
+            projects_data = ticktick.get_projects()
+            if 'error' in projects_data:
+                return f"Error fetching projects: {projects_data['error']}"
+            
+            # Find the specific project
+            project = None
+            for p in projects_data:
+                if p.get('id') == project_id or (project_id == "inbox" and p.get('name', '').lower() == "inbox"):
+                    project = p
+                    break
+            
+            if not project:
+                return f"Project '{project_id}' not found."
+            
+            projects = [project]
+        else:
+            # All projects
+            projects = ticktick.get_projects()
+            if 'error' in projects:
+                return f"Error fetching projects: {projects['error']}"
         
-        def search_filter(task: Dict[str, Any]) -> bool:
-            return _task_matches_search(task, search_term)
-        
-        return _get_project_tasks_by_filter(projects, search_filter, f"matching '{search_term}'")
-        
-    except Exception as e:
-        logger.error(f"Error in search_tasks: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def batch_create_tasks(tasks: List[Dict[str, Any]]) -> str:
-    """
-    Create multiple tasks in TickTick at once
-    
-    Args:
-        tasks: List of task dictionaries. Each task must contain:
-            - title (required): Task Name
-            - project_id (required): ID of the project for the task
-            - content (optional): Task description
-            - start_date (optional): Start date in user timezone (YYYY-MM-DDTHH:mm:ss or with timezone)
-            - due_date (optional): Due date in user timezone (YYYY-MM-DDTHH:mm:ss or with timezone)  
-            - priority (optional): Priority level {0: "None", 1: "Low", 3: "Medium", 5: "High"}
-    
-    Example:
-        tasks = [
-            {"title": "Example A", "project_id": "1234ABC", "priority": 5},
-            {"title": "Example B", "project_id": "1234XYZ", "content": "Description", "start_date": "2025-07-18T10:00:00", "due_date": "2025-07-19T10:00:00"}
-        ]
-    """
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
-    
-    if not tasks:
-        return "No tasks provided. Please provide a list of tasks to create."
-    
-    if not isinstance(tasks, list):
-        return "Tasks must be provided as a list of dictionaries."
-    
-    # Validate all tasks before creating any
-    validation_errors = []
-    for i, task_data in enumerate(tasks):
-        if not isinstance(task_data, dict):
-            validation_errors.append(f"Task {i + 1}: Must be a dictionary")
-            continue
-        
-        error = _validate_task_data(task_data, i)
-        if error:
-            validation_errors.append(error)
-    
-    if validation_errors:
-        return "Validation errors found:\n" + "\n".join(validation_errors)
-    
-    # Create tasks one by one and collect results
-    created_tasks = []
-    failed_tasks = []
-    
-    try:
-        for i, task_data in enumerate(tasks):
-            try:
-                # Extract task parameters with defaults
-                title = task_data['title']
-                project_id = task_data['project_id']
-                content = task_data.get('content')
-                start_date = task_data.get('start_date')
-                due_date = task_data.get('due_date')
-                priority = task_data.get('priority', 0)
-                
-                # Create the task
-                result = ticktick.create_task(
-                    title=title,
-                    project_id=project_id,
-                    content=content,
-                    start_date=start_date,
-                    due_date=due_date,
-                    priority=priority
-                )
-                
-                if 'error' in result:
-                    failed_tasks.append(f"Task {i + 1} ('{title}'): {result['error']}")
+        # Build filter function
+        def task_filter(task: Dict[str, Any]) -> bool:
+            # Date filter
+            if date_filter == "all":
+                date_match = True
+            elif date_filter == "today":
+                date_match = _is_task_due_today(task)
+            elif date_filter == "tomorrow":
+                date_match = _is_task_due_in_days(task, 1)
+            elif date_filter == "overdue":
+                date_match = _is_task_overdue(task)
+            elif date_filter in ["this_week", "next_7_days"]:
+                due_date = task.get('dueDate')
+                if not due_date:
+                    date_match = False
                 else:
-                    created_tasks.append((i + 1, title, result))
-                    
-            except Exception as e:
-                failed_tasks.append(f"Task {i + 1} ('{task_data.get('title', 'Unknown')}'): {str(e)}")
+                    task_dt = _parse_ticktick_date(due_date)
+                    if not task_dt:
+                        date_match = False
+                    else:
+                        task_due_date = task_dt.date()
+                        today = datetime.now(timezone.utc).date()
+                        week_from_today = today + timedelta(days=7)
+                        date_match = today <= task_due_date <= week_from_today
+            else:
+                date_match = True
+            
+            # Priority filter
+            if priority is None:
+                priority_match = True
+            else:
+                priority_match = task.get('priority', 0) == priority
+            
+            # Search filter
+            if search_term is None:
+                search_match = True
+            else:
+                search_match = _task_matches_search(task, search_term)
+            
+            return date_match and priority_match and search_match
         
-        # Format the results
-        result_message = f"Batch task creation completed.\n\n"
-        result_message += f"Successfully created: {len(created_tasks)} tasks\n"
-        result_message += f"Failed: {len(failed_tasks)} tasks\n\n"
+        # Build filter description
+        filter_parts = []
+        if date_filter != "all":
+            filter_parts.append(date_filter)
+        if priority is not None:
+            filter_parts.append(f"priority {PRIORITY_MAP[priority]}")
+        if search_term:
+            filter_parts.append(f"matching '{search_term}'")
+        if project_id:
+            filter_parts.append(f"in project '{project_id}'")
         
-        if created_tasks:
-            result_message += "✅ Successfully Created Tasks:\n"
-            for task_num, title, task_obj in created_tasks:
-                result_message += f"{task_num}. {title} (ID: {task_obj.get('id', 'Unknown')})\n"
-            result_message += "\n"
+        filter_name = " and ".join(filter_parts) if filter_parts else "all tasks"
         
-        if failed_tasks:
-            result_message += "❌ Failed Tasks:\n"
-            for error in failed_tasks:
-                result_message += f"{error}\n"
-        
-        return result_message
+        return _get_project_tasks_by_filter(projects, task_filter, filter_name)
         
     except Exception as e:
-        logger.error(f"Error in batch_create_tasks: {e}")
-        return f"Error during batch task creation: {str(e)}"
+        logger.error(f"Error in filter_tasks: {e}")
+        return f"Error filtering tasks: {str(e)}"
 
-# New MCP Tools for Getting things done framework (Priority / Due Dates)
+# GTD Workflow Prompts
 
-@mcp.tool()
-async def get_engaged_tasks() -> str:
+@mcp.prompt()
+async def engaged() -> list:
     """
-    Get all tasks from TickTick that are "Engaged".
-    This includes tasks marked as high priority (5), due today or overdue.
-    """
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
+    Show me tasks that need immediate attention (GTD "Engaged" workflow).
     
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def engaged_filter(task: Dict[str, Any]) -> bool:
-            is_high_priority = task.get('priority', 0) == 5
-            is_overdue = _is_task_overdue(task)
-            is_today = _is_task_due_today(task)
-            return is_high_priority or is_overdue or is_today
-        
-        return _get_project_tasks_by_filter(projects, engaged_filter, "engaged")
-        
-    except Exception as e:
-        logger.error(f"Error in get_engaged_tasks: {e}")
-        return f"Error retrieving projects: {str(e)}"
-
-@mcp.tool()
-async def get_next_tasks() -> str:
-    """
-    Get all tasks from TickTick that are "Next".
-    This includes tasks marked as medium priority (3) or due tomorrow.
-    """
-    if not ticktick:
-        if not initialize_client():
-            return "Failed to initialize TickTick client. Please check your API credentials."
+    This prompt helps you focus on tasks that require immediate action:
+    - High priority tasks (priority 5)
+    - Overdue tasks
+    - Tasks due today
     
-    try:
-        projects = ticktick.get_projects()
-        if 'error' in projects:
-            return f"Error fetching projects: {projects['error']}"
-        
-        def next_filter(task: Dict[str, Any]) -> bool:
-            is_medium_priority = task.get('priority', 0) == 3
-            is_due_tomorrow = _is_task_due_in_days(task, 1)
-            return is_medium_priority or is_due_tomorrow
-        
-        return _get_project_tasks_by_filter(projects, next_filter, "next")
-        
-    except Exception as e:
-        logger.error(f"Error in get_next_tasks: {e}")
-        return f"Error retrieving projects: {str(e)}"
+    Use this when you need to see what demands your attention right now.
+    """
+    return [
+        {
+            "role": "user",
+            "content": {
+                "type": "text",
+                "text": "Use the filter_tasks tool to show me all engaged tasks. Engaged tasks are: (1) tasks with priority=5 OR (2) tasks with date_filter='overdue' OR (3) tasks with date_filter='today'. Format the results as a clear, actionable list with project groupings."
+            }
+        }
+    ]
+
+@mcp.prompt()
+async def next_actions() -> list:
+    """
+    Show me tasks for next actions (GTD "Next" workflow).
+    
+    This prompt helps you identify tasks ready for action:
+    - Medium priority tasks (priority 3)
+    - Tasks due tomorrow
+    
+    Use this when planning what to work on next.
+    """
+    return [
+        {
+            "role": "user",
+            "content": {
+                "type": "text",
+                "text": "Use the filter_tasks tool to show me my next actions. Next actions are: (1) tasks with priority=3 OR (2) tasks with date_filter='tomorrow'. Format the results as an organized, prioritized list."
+            }
+        }
+    ]
 
 @mcp.tool()
 async def create_subtask(
@@ -950,11 +915,21 @@ async def create_subtask(
     Create a subtask for a parent task within the same project.
     
     Args:
-        subtask_title: Title of the subtask
-        parent_task_id: ID of the parent task
-        project_id: ID of the project (must be same for both parent and subtask)
+        subtask_title: Title of the subtask (required)
+            Example: "Buy milk"
+        parent_task_id: ID of the parent task (required)
+            Example: "63b7bebb91c0a5474805fcd4"
+        project_id: ID of the project (required). Must match the parent task's project.
+            Use "inbox" if the parent task is in the inbox.
         content: Optional content/description for the subtask
-        priority: Priority level (0: None, 1: Low, 3: Medium, 5: High) (optional)
+        priority: Priority level (optional, default 0)
+            0 = None, 1 = Low, 3 = Medium, 5 = High
+    
+    Returns:
+        Formatted subtask details including ID.
+    
+    Example:
+        create_subtask("Buy milk", "63b7bebb91c0a5474805fcd4", "inbox", priority=1)
     """
     if not ticktick:
         if not initialize_client():

@@ -133,18 +133,48 @@ Once connected, you'll see the TickTick MCP server tools available in Claude, in
 
 ## Available MCP Tools
 
+The TickTick MCP server provides **12 tools** for managing your tasks and projects:
+
+### Projects
+
 | Tool | Description | Parameters |
 |------|-------------|------------|
 | `get_projects` | List all your TickTick projects | None |
 | `get_project` | Get details about a specific project | `project_id` |
+| `create_project` | Create a new project | `name`, `color` (optional), `view_mode` (optional) |
+| `delete_project` | Delete a project | `project_id` |
+
+### Tasks
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
 | `get_project_tasks` | List all tasks in a project | `project_id` |
 | `get_task` | Get details about a specific task | `project_id`, `task_id` |
 | `create_task` | Create a new task | `title`, `project_id`, `content` (optional), `start_date` (optional), `due_date` (optional), `priority` (optional) |
 | `update_task` | Update an existing task | `task_id`, `project_id`, `title` (optional), `content` (optional), `start_date` (optional), `due_date` (optional), `priority` (optional) |
 | `complete_task` | Mark a task as complete | `project_id`, `task_id` |
 | `delete_task` | Delete a task | `project_id`, `task_id` |
-| `create_project` | Create a new project | `name`, `color` (optional), `view_mode` (optional) |
-| `delete_project` | Delete a project | `project_id` |
+| `create_subtask` | Create a subtask for a parent task | `subtask_title`, `parent_task_id`, `project_id`, `content` (optional), `priority` (optional) |
+
+### Task Filtering
+
+| Tool | Description | Parameters |
+|------|-------------|------------|
+| `filter_tasks` | Filter tasks with flexible criteria | `date_filter` (optional), `priority` (optional), `search_term` (optional), `project_id` (optional) |
+
+**Filter Parameters:**
+- `date_filter`: `"all"`, `"today"`, `"tomorrow"`, `"overdue"`, `"this_week"`, or `"next_7_days"` (default: `"all"`)
+- `priority`: `0` (None), `1` (Low), `3` (Medium), or `5` (High) (default: `None` = any priority)
+- `search_term`: Text to search in task titles, content, or subtasks (case-insensitive)
+- `project_id`: Filter to a specific project or `"inbox"` (default: `None` = all projects)
+
+**Examples:**
+- `filter_tasks(date_filter="overdue")` - All overdue tasks
+- `filter_tasks(priority=5)` - All high priority tasks
+- `filter_tasks(date_filter="today", priority=5)` - High priority tasks due today
+- `filter_tasks(search_term="client meeting")` - Search for tasks about client meetings
+- `filter_tasks(project_id="inbox", date_filter="this_week")` - Inbox tasks due this week
+- `filter_tasks(priority=3, search_term="review")` - Medium priority tasks containing "review"
 
 ### Special Project IDs
 
@@ -152,30 +182,16 @@ Once connected, you'll see the TickTick MCP server tools available in Claude, in
 - `get_project_tasks("inbox")` - Get all tasks in your inbox
 - `create_task("My Task", "inbox")` - Create a task in your inbox
 
-## Task-specific MCP Tools
+## MCP Prompts
 
-### Task Retrieval & Search
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_all_tasks` | Get all tasks from all projects | None |
-| `get_tasks_by_priority` | Get tasks filtered by priority level | `priority_id` (0: None, 1: Low, 3: Medium, 5: High) |
-| `search_tasks` | Search tasks by title, content, or subtasks | `search_term` |
+The server also provides **2 prompts** for workflow helpers:
 
-### Date-Based Task Retrieval
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_tasks_due_today` | Get all tasks due today | None |
-| `get_tasks_due_tomorrow` | Get all tasks due tomorrow | None |
-| `get_tasks_due_in_days` | Get tasks due in exactly X days | `days` (0 = today, 1 = tomorrow, etc.) |
-| `get_tasks_due_this_week` | Get tasks due within the next 7 days | None |
-| `get_overdue_tasks` | Get all overdue tasks | None |
+| Prompt | Description | Usage |
+|--------|-------------|-------|
+| `/engaged` | Show tasks that need immediate attention (GTD "Engaged" workflow) | High priority tasks, overdue tasks, and tasks due today |
+| `/next` | Show tasks for next actions (GTD "Next" workflow) | Medium priority tasks and tasks due tomorrow |
 
-### Getting Things Done (GTD) Framework
-| Tool | Description | Parameters |
-|------|-------------|------------|
-| `get_engaged_tasks` | Get "engaged" tasks (high priority or overdue) | None |
-| `get_next_tasks` | Get "next" tasks (medium priority or due tomorrow) | None |
-| `batch_create_tasks` | Create multiple tasks at once | `tasks` (list of task dictionaries) |
+These prompts are user-driven and can be invoked in Cursor or other MCP clients that support prompts. They use the `filter_tasks` tool internally to provide GTD workflow assistance.
 
 ## Example Prompts for Claude
 
@@ -192,26 +208,24 @@ Here are some example prompts to use with Claude after connecting the TickTick M
 
 ### Task Filtering Queries
 
-- "What tasks do I have due today?"
-- "Show me everything that's overdue"
-- "Show me all tasks due this week"
-- "Search for tasks about 'project alpha'"
-- "Show me all tasks with 'client' in the title or description"
-- "Show me all my high priority tasks"
+- "Show me all overdue tasks" → `filter_tasks(date_filter="overdue")`
+- "What tasks do I have due today?" → `filter_tasks(date_filter="today")`
+- "Show me all tasks due this week" → `filter_tasks(date_filter="this_week")`
+- "Show me all my high priority tasks" → `filter_tasks(priority=5)`
+- "Search for tasks about 'project alpha'" → `filter_tasks(search_term="project alpha")`
+- "Show me high priority tasks due today in my inbox" → `filter_tasks(project_id="inbox", date_filter="today", priority=5)`
 
 ### GTD Workflow
 
-Following David Allen's "Getting Things Done" framework, manage an Engaged and Next actions.
+Following David Allen's "Getting Things Done" framework:
 
-- Engaged will retrieve tasks of high priority, due today or overdue.
-- Next will retrieve medium priority or due tomorrow.
-- Break down complex actions into smaller actions with batch_creation
+- **Engaged tasks**: Use the `/engaged` prompt or `filter_tasks` with multiple criteria
+  - "Show me my engaged tasks" → Use `/engaged` prompt
+  - "What needs my immediate attention?" → `filter_tasks(date_filter="overdue")` or `filter_tasks(priority=5)`
 
-For example:
-
-- "Time block the rest of my day from 2-8pm with items from my engaged list"
-- "Walk me through my next actions and help my identify what I should focus on tomorrow?" 
-- "Break down this project into 5 smaller actionable tasks"
+- **Next actions**: Use the `/next` prompt
+  - "Show me my next actions" → Use `/next` prompt
+  - "What should I work on tomorrow?" → `filter_tasks(date_filter="tomorrow")`
 
 ## Development
 
