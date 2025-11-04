@@ -600,7 +600,7 @@ def _is_task_due_today(task: Dict[str, Any]) -> bool:
 
 def _is_task_overdue(task: Dict[str, Any]) -> bool:
     """Check if a task is overdue."""
-    now_local = datetime.now()
+    now_local = datetime.now(timezone.utc).astimezone()
     # For overdue, we primarily check dueDate (if present)
     # If only startDate exists, we check if it's in the past
     due_date = task.get('dueDate')
