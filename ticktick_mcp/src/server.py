@@ -570,45 +570,80 @@ def _parse_ticktick_date(date_str: str) -> Optional[datetime]:
     except (ValueError, TypeError, AttributeError):
         return None
 
+def _to_local_date(task_dt: datetime) -> date:
+    """
+    Convert a datetime (with timezone) to local date.
+    
+    Args:
+        task_dt: datetime object, possibly with timezone info
+        
+    Returns:
+        date object in local timezone
+    """
+    if task_dt.tzinfo:
+        return task_dt.astimezone().date()
+    return task_dt.date()
+
 def _is_task_due_today(task: Dict[str, Any]) -> bool:
-    """Check if a task is due today."""
-    due_date = task.get('dueDate')
-    if not due_date:
-        return False
-    
-    task_dt = _parse_ticktick_date(due_date)
-    if not task_dt:
-        return False
-    
-    task_due_date = task_dt.date()
-    today_date = datetime.now(timezone.utc).date()
-    return task_due_date == today_date
+    """Check if a task is due or starts today."""
+    # Check both dueDate and startDate (calendar events often only have startDate)
+    today_date = datetime.now().date()
+    for date_field in ['dueDate', 'startDate']:
+        date_str = task.get(date_field)
+        if date_str:
+            task_dt = _parse_ticktick_date(date_str)
+            if task_dt:
+                task_date = _to_local_date(task_dt)
+                if task_date == today_date:
+                    return True
+    return False
 
 def _is_task_overdue(task: Dict[str, Any]) -> bool:
     """Check if a task is overdue."""
+    now_local = datetime.now()
+    # For overdue, we primarily check dueDate (if present)
+    # If only startDate exists, we check if it's in the past
     due_date = task.get('dueDate')
-    if not due_date:
-        return False
+    if due_date:
+        task_dt = _parse_ticktick_date(due_date)
+        if task_dt:
+            # Convert task datetime to local timezone for comparison
+            if task_dt.tzinfo:
+                task_dt_local = task_dt.astimezone()
+            else:
+                # If naive, assume it's UTC and convert to local
+                task_dt_local = task_dt.replace(tzinfo=timezone.utc).astimezone()
+            return task_dt_local < now_local
     
-    task_dt = _parse_ticktick_date(due_date)
-    if not task_dt:
-        return False
+    # If no dueDate but has startDate, check if startDate is in the past
+    start_date = task.get('startDate')
+    if start_date:
+        task_dt = _parse_ticktick_date(start_date)
+        if task_dt:
+            # Convert task datetime to local timezone for comparison
+            if task_dt.tzinfo:
+                task_dt_local = task_dt.astimezone()
+            else:
+                # If naive, assume it's UTC and convert to local
+                task_dt_local = task_dt.replace(tzinfo=timezone.utc).astimezone()
+            return task_dt_local < now_local
     
-    return task_dt < datetime.now(timezone.utc)
+    return False
 
 def _is_task_due_in_days(task: Dict[str, Any], days: int) -> bool:
-    """Check if a task is due in exactly X days."""
-    due_date = task.get('dueDate')
-    if not due_date:
-        return False
+    """Check if a task is due or starts in exactly X days."""
+    target_date = (datetime.now() + timedelta(days=days)).date()
     
-    task_dt = _parse_ticktick_date(due_date)
-    if not task_dt:
-        return False
-    
-    task_due_date = task_dt.date()
-    target_date = (datetime.now(timezone.utc) + timedelta(days=days)).date()
-    return task_due_date == target_date
+    # Check both dueDate and startDate (calendar events often only have startDate)
+    for date_field in ['dueDate', 'startDate']:
+        date_str = task.get(date_field)
+        if date_str:
+            task_dt = _parse_ticktick_date(date_str)
+            if task_dt:
+                task_date = _to_local_date(task_dt)
+                if task_date == target_date:
+                    return True
+    return False
 
 def _task_matches_search(task: Dict[str, Any], search_term: str) -> bool:
     """Check if a task matches the search term (case-insensitive)."""
@@ -810,18 +845,20 @@ async def filter_tasks(
             elif date_filter == "overdue":
                 date_match = _is_task_overdue(task)
             elif date_filter in ["this_week", "next_7_days"]:
-                due_date = task.get('dueDate')
-                if not due_date:
-                    date_match = False
-                else:
-                    task_dt = _parse_ticktick_date(due_date)
-                    if not task_dt:
-                        date_match = False
-                    else:
-                        task_due_date = task_dt.date()
-                        today = datetime.now(timezone.utc).date()
-                        week_from_today = today + timedelta(days=7)
-                        date_match = today <= task_due_date <= week_from_today
+                # Check both dueDate and startDate (calendar events often only have startDate)
+                today = datetime.now().date()
+                week_from_today = today + timedelta(days=7)
+                date_match = False
+                
+                for date_field in ['dueDate', 'startDate']:
+                    date_str = task.get(date_field)
+                    if date_str:
+                        task_dt = _parse_ticktick_date(date_str)
+                        if task_dt:
+                            task_date = _to_local_date(task_dt)
+                            if today <= task_date <= week_from_today:
+                                date_match = True
+                                break
             else:
                 date_match = True
             
