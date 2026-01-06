@@ -706,7 +706,7 @@ def _validate_task_data(task_data: Dict[str, Any], task_index: int) -> Optional[
     
     return None
 
-def _get_project_tasks_by_filter(projects: List[Dict], filter_func, filter_name: str) -> str:
+def _get_project_tasks_by_filter(projects: List[Dict], filter_func, filter_name: str, include_inbox: bool = True) -> str:
     """
     Helper function to filter tasks across all projects.
     
@@ -714,6 +714,7 @@ def _get_project_tasks_by_filter(projects: List[Dict], filter_func, filter_name:
         projects: List of project dictionaries
         filter_func: Function that takes a task and returns True if it matches the filter
         filter_name: Name of the filter for output formatting
+        include_inbox: Whether to include inbox tasks (default True)
     
     Returns:
         Formatted string of filtered tasks
@@ -721,25 +722,52 @@ def _get_project_tasks_by_filter(projects: List[Dict], filter_func, filter_name:
     if not projects:
         return "No projects found."
     
-    result = f"Found {len(projects)} projects:\n\n"
+    # Check if inbox is already in the projects list
+    # Inbox can have IDs like "inbox116792701" or be named "Inbox"
+    has_inbox = any(
+        p.get('id', '').lower().startswith('inbox') or 
+        p.get('name', '').lower() == 'inbox'
+        for p in projects
+    )
     
-    for i, project in enumerate(projects, 1):
+    # If inbox is not in the list and we should include it, add it explicitly
+    projects_to_process = list(projects)
+    if include_inbox and not has_inbox:
+        # Add a synthetic inbox entry - we'll fetch it with the special "inbox" ID
+        projects_to_process.append({
+            'id': 'inbox',
+            'name': 'Inbox',
+            '_synthetic': True  # Mark as synthetic so we know to use special handling
+        })
+    
+    result = f"Found {len(projects_to_process)} projects:\n\n"
+    
+    for i, project in enumerate(projects_to_process, 1):
         if project.get('closed'):
             continue
             
         project_id = project.get('id', 'No ID')
         project_data = ticktick.get_project_with_data(project_id)
+        
+        # Handle error responses (e.g., if inbox doesn't exist for this user)
+        if 'error' in project_data:
+            logger.debug(f"Error fetching project {project_id}: {project_data.get('error')}")
+            continue
+            
         tasks = project_data.get('tasks', [])
         
+        # Get the actual project info from the response if available
+        actual_project = project_data.get('project', project)
+        
         if not tasks:
-            result += f"Project {i}:\n{format_project(project)}"
+            result += f"Project {i}:\n{format_project(actual_project)}"
             result += f"With 0 tasks that are to be '{filter_name}' in this project :\n\n\n"
             continue
         
         # Filter tasks using the provided function
         filtered_tasks = [(t, task) for t, task in enumerate(tasks, 1) if filter_func(task)]
         
-        result += f"Project {i}:\n{format_project(project)}"
+        result += f"Project {i}:\n{format_project(actual_project)}"
         result += f"With {len(filtered_tasks)} tasks that are to be '{filter_name}' in this project :\n"
         
         for t, task in filtered_tasks:
@@ -812,21 +840,26 @@ async def filter_tasks(
         # Get projects to filter
         if project_id:
             # Single project filter
-            projects_data = ticktick.get_projects()
-            if 'error' in projects_data:
-                return f"Error fetching projects: {projects_data['error']}"
-            
-            # Find the specific project
-            project = None
-            for p in projects_data:
-                if p.get('id') == project_id or (project_id == "inbox" and p.get('name', '').lower() == "inbox"):
-                    project = p
-                    break
-            
-            if not project:
-                return f"Project '{project_id}' not found."
-            
-            projects = [project]
+            if project_id.lower() == "inbox":
+                # Special handling for inbox - don't search in projects list
+                # Just create a synthetic project entry that will be fetched
+                projects = [{'id': 'inbox', 'name': 'Inbox'}]
+            else:
+                projects_data = ticktick.get_projects()
+                if 'error' in projects_data:
+                    return f"Error fetching projects: {projects_data['error']}"
+                
+                # Find the specific project
+                project = None
+                for p in projects_data:
+                    if p.get('id') == project_id:
+                        project = p
+                        break
+                
+                if not project:
+                    return f"Project '{project_id}' not found."
+                
+                projects = [project]
         else:
             # All projects
             projects = ticktick.get_projects()
@@ -889,7 +922,10 @@ async def filter_tasks(
         
         filter_name = " and ".join(filter_parts) if filter_parts else "all tasks"
         
-        return _get_project_tasks_by_filter(projects, task_filter, filter_name)
+        # When filtering a specific project, don't add inbox automatically
+        # When filtering all projects, include inbox
+        include_inbox = project_id is None
+        return _get_project_tasks_by_filter(projects, task_filter, filter_name, include_inbox=include_inbox)
         
     except Exception as e:
         logger.error(f"Error in filter_tasks: {e}")
